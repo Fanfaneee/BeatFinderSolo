@@ -86,7 +86,14 @@
 
                 {{-- LECTEUR AUDIO PENDANT LA LECTURE (wire:key pour le re-rendu unique) --}}
                 @if ($currentMusic)
-                    <div class="flex justify-center items-center mb-8" x-data="{ playing: false }">
+                {{-- Visuel Sonore Décoratif (simple) --}}
+                <div class="mt-4 h-12 bg-gray-100 rounded-lg overflow-hidden flex items-end p-1 space-x-1 border border-gray-300">
+                    @for ($i = 0; $i < 20; $i++)
+                        <div class="bg-indigo-400 rounded-sm" style="width: 8%; height: {{ rand(30, 100) }}%; animation: soundbar-{{ $i }} 1s infinite alternate; animation-delay: {{ $i * 0.1 }}s;"></div>
+                    @endfor
+                    <style>@keyframes soundbar-animation { 0% { height: 30%; } 100% { height: 100%; } }</style>
+                </div>
+                    <div class="flex hidden justify-center items-center mb-8" x-data="{ playing: false }">
                         <audio 
                             id="game-audio"
                             wire:key="audio-{{ $currentMusic->id }}"

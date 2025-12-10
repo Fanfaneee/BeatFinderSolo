@@ -14,6 +14,11 @@ class Lobby extends Component
     public ?int $gameId= null;
     public string $selectedGenre = '';
 
+    //pour carousel
+    public static $GENRES_CHOIX = ['Pop', 'Rock', 'Hip Hop', 'Années 80', 'Hits 2020', 'Jazz']; // Exemple
+    public $currentSlideIndex = 0;
+    //
+
     const GENRES_CHOIX = [
         'Toutes Catégories', // Option pour inclure tous les genres
         'Rock Classique', 
@@ -85,6 +90,37 @@ class Lobby extends Component
             $this->gameName = "Partie Blind Test"; 
         }
     }
+
+
+public function nextSlide()
+    {
+        // On utilise la propriété de classe 'const' pour avoir la liste des genres
+        $maxIndex = count(self::GENRES_CHOIX) - 1; 
+
+        if ($this->currentSlideIndex < $maxIndex) {
+            // Avance normalement
+            $this->currentSlideIndex++;
+        } else {
+            // BOUCLAGE : Si on est à la dernière slide, on revient à la première (index 0)
+            $this->currentSlideIndex = 0; 
+        }
+    }
+
+    public function prevSlide()
+    {
+        // On utilise la propriété de classe 'const' pour avoir la liste des genres
+        $maxIndex = count(self::GENRES_CHOIX) - 1; 
+
+        if ($this->currentSlideIndex > 0) {
+            // Recule normalement
+            $this->currentSlideIndex--;
+        } else {
+            // BOUCLAGE : Si on est à la première slide, on va à la dernière
+            $this->currentSlideIndex = $maxIndex; 
+        }
+    }
+
+
     public function render(){
         return view('livewire.lobby');
     }

@@ -1,0 +1,72 @@
+<div class="flex items-start justify-center p-6 bg-gray-50 min-h-screen">
+    
+    <div class="w-full max-w-4xl">
+        
+        {{-- ÉTAPE 1: SÉLECTION DU GENRE --}}
+        @if (!$selectedGenre)
+            <h1 class="text-3xl font-extrabold text-center text-indigo-700 mb-8">
+                Sélectionnez votre Mode de Jeu
+            </h1>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                @foreach (App\Livewire\Lobby::GENRES_CHOIX as $genre)
+                    <div 
+                        wire:click="selectGenre('{{ $genre }}')"
+                        class="bg-white p-6 rounded-xl shadow-lg border-2 border-gray-200 hover:border-indigo-500 cursor-pointer transition duration-200 text-center"
+                    >
+                        <p class="text-xl font-bold text-gray-800">{{ $genre }}</p>
+                    </div>
+                @endforeach
+            </div>
+            
+        {{-- ÉTAPE 2: CONFIGURATION ET LANCEMENT --}}
+        @elseif ($gameId)
+            {{-- Transition vers Game --}}
+            @livewire('game', ['gameId' => $gameId]) 
+            
+        @else
+            <div class="w-full max-w-lg mx-auto bg-white p-8 rounded-xl shadow-2xl border border-indigo-100">
+                
+                <div class="flex items-center mb-6">
+                    <button 
+                        wire:click="resetState" 
+                        class="p-2 pointer mr-4 text-gray-600 hover:text-indigo-600 transition duration-150 rounded-full bg-gray-100 hover:bg-gray-200 focus:outline-none"
+                        title="Retour à la sélection des genres"
+                    >
+                        {{-- Icône SVG (flèche gauche) --}}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+                        </svg>
+                    </button>
+                    
+                    <h1 class="text-2xl font-bold">
+                        Configuration : <span class="text-green-600">{{ $selectedGenre }}</span>
+                    </h1>
+                </div>
+                
+                {{-- Formulaire de configuration --}}
+                <form wire:submit.prevent="createGame" class="space-y-6">
+                    
+                    {{-- NOM DU JEU --}}
+                    <div>
+                        <label for="gameName" class="block text-sm font-medium text-gray-700 mb-1">Nom de la Partie</label>
+                        <input wire:model="gameName" type="text" id="gameName" class="w-full p-2 border rounded-lg">
+                        @error('gameName') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                    </div>
+        
+                    {{-- NOMBRE DE MANCHES --}}
+                    <div>
+                        <label for="nombreManches" class="block text-sm font-medium text-gray-700 mb-1">Nombre de Manches</label>
+                        <input wire:model="nombreManches" type="number" id="nombreManches" min="3" max="50" class="w-full p-2 border rounded-lg">
+                        @error('nombreManches') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                    
+                    <button type="submit" class="w-full py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700">
+                        Lancer la Partie {{ $selectedGenre }}
+                    </button>
+                    
+                </form>
+            </div>
+        @endif
+    </div>
+</div>

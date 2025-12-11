@@ -12,6 +12,8 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/jeu/{gameId}', Game::class)->name('game');
-    
+});
 
+Route::middleware(['auth'])->group(function () {
+    Route::get('/profil', App\Livewire\Profil::class)->name('profil');
 });

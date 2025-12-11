@@ -6,22 +6,18 @@ use Livewire\Component;
 use App\Models\Jeu;
 use App\Models\Musique;
 use Illuminate\Support\Facades\Auth;
-use Livewore\Attributes\On;
+use Livewire\Attributes\On; // Correction de la faute de frappe : Livewire\Attributes\On
 use App\Livewire\Lobby;
 
 class Game extends Component
 {
-    
+    // PROPRIÉTÉS
     public Jeu $jeu;
-    
     public $currentMusic = null; 
-    
     public int $score;
     public int $mancheActuelle = 0;
-
     public int $timeRemaining = 15;
     public string $roundStatus = 'waiting'; // 'playing', 'revealed', 'finished'
-
     public string $userAnswer = '';
     public ?string $answerMessage = null;
     public bool $hasFoundFullAnswer = false; 
@@ -30,11 +26,9 @@ class Game extends Component
     public array $revealedMusics = [];
     public array $playedMusicIds = [];
     
-        
-    
-  
+    // CONSTANTES
     private const READING_TIME = 15;
-    private const REVEAL_TIME = 2;
+    // La constante REVEAL_TIME est conservée mais ignorée dans tick() selon votre demande.
 
     
     public function mount(int $gameId)
@@ -42,49 +36,60 @@ class Game extends Component
         $this->jeu = Jeu::findOrFail($gameId);
         
         if ($this->jeu->user_id !== Auth::id()) {
-             abort(403, 'Accès interdit à cette partie.');
+            abort(403, 'Accès interdit à cette partie.');
         }
 
         $this->score = $this->jeu->score;
         
+        // Initialiser l'historique des musiques jouées (si besoin de persistance)
+        // Pour l'instant, on se base sur les musiques jouées durant cette session
+        
         if ($this->jeu->status_enum === 'en_cours') {
             $this->startNextRound();
         } else {
-             $this->roundStatus = 'finished';
+            $this->roundStatus = 'finished';
         }
     }
     
 
-public function tick()
-{
-    // 1. Arrêter si la partie est terminée
-    if ($this->roundStatus === 'finished' || $this->roundStatus === 'waiting') {
-        return;
-    }
-    
-    // 2. Décrémenter le minuteur (pour PLAYING ou REVEALED)
-    if ($this->timeRemaining > 1) {
-        $this->timeRemaining--;
-        return; 
-    }
-    
-    // 3. Le temps est écoulé (timeRemaining <= 1)
-    
-    if ($this->roundStatus === 'playing') {
-        $this->endRound(false); // Passe à 'revealed'
-       
-        $this->startNextRound(); 
+    public function tick()
+    {
+        // 1. Arrêter si la partie est terminée ou en attente
+        if ($this->roundStatus === 'finished' || $this->roundStatus === 'waiting') {
+            return;
+        }
         
-    } elseif ($this->roundStatus === 'revealed') {
-}
-}
-
+        // 2. Décrémenter le minuteur uniquement si nous sommes en phase de jeu
+        if ($this->roundStatus === 'playing') {
+            
+            if ($this->timeRemaining > 1) {
+                $this->timeRemaining--;
+                return; 
+            }
+            
+            // 3. Le temps est écoulé (timeRemaining <= 1)
+            
+            // La manche de jeu se termine sans réponse complète
+            $this->endRound(false); // Passe le statut à 'revealed'
+            $this->startNextRound(); // Commence immédiatement la prochaine manche ou termine le jeu
+        } 
+        // L'état 'revealed' est ignoré ici, car la transition est gérée immédiatement dans endRound -> startNextRound
+    }
 
     public function startNextRound()
     {
+        // 🚨 1. VÉRIFICATION DE LA FIN DE PARTIE NORMALE (Nombre de manches atteint)
         if ($this->mancheActuelle >= $this->jeu->nombre_manches) { 
+            
             $this->roundStatus = 'finished';
-            $this->jeu->update(['status_enum' => 'terminé']);
+/*             dd('Fin de partie atteinte! Score à envoyer:', $this->score, 'Catégorie:', $this->jeu->genre_filtre);
+ */            
+            // 🔥 Mise à jour finale du score et du statut dans la DB
+            $this->jeu->update(['status_enum' => 'terminé', 'score' => $this->score]);
+            
+            // 🔥 DISPATCH L'ÉVÉNEMENT POUR ENREGISTRER LE MEILLEUR SCORE (ScoreSaver)
+            $this->dispatch('gameFinished', score: $this->score, categorie: $this->jeu->genre_filtre);
+            
             return;
         }
 
@@ -98,126 +103,136 @@ public function tick()
         $this->hasFoundArtist = false;
 
         $genreFiltre = $this->jeu->genre_filtre;
-    $query = Musique::whereNotIn('id', $this->playedMusicIds);
+        $query = Musique::whereNotIn('id', $this->playedMusicIds);
 
-    // 🔥 APPLICATION DU FILTRE
-    if ($genreFiltre && $genreFiltre !== Lobby::GENRES_CHOIX[0]) {
-        // App\Livewire\Lobby::GENRES_CHOIX[0] est 'Toutes Catégories'
-        $query->where('genre', $genreFiltre);
-    }
-    $this->currentMusic = $query->inRandomOrder()->first();
-    if (!$this->currentMusic) {
-        // Cas d'erreur : plus de musique disponible sous ce genre/filtre.
-        $this->answerMessage = "Plus de musiques disponibles dans la catégorie '{$genreFiltre}'. Fin de partie prématurée.";
-        $this->roundStatus = 'finished';
-        $this->jeu->update(['status_enum' => 'terminé']);
-        return;
-    }
+        // 🔥 Accès sécurisé à la constante de l'autre classe Lobby (évite les erreurs de classe non trouvée)
+        $allCategoriesOption = constant(Lobby::class . '::GENRES_CHOIX')[0] ?? 'Toutes Catégories';
 
-    // 2. Ajouter l'ID de la nouvelle musique à l'historique
-    $this->playedMusicIds[] = $this->currentMusic->id;
-        
-        if (!$this->currentMusic) {
-            session()->flash('error', 'Catalogue de musiques vide.');
-            $this->roundStatus = 'finished';
-            return;
+        if ($genreFiltre && $genreFiltre !== $allCategoriesOption) {
+            // Le champ 'genre' dans musiques doit correspondre à la valeur de Lobby::GENRES_CHOIX
+            $query->where('genre', $genreFiltre);
         }
         
+        $this->currentMusic = $query->inRandomOrder()->first();
+        
+        // 🚨 2. VÉRIFICATION DE LA FIN DE PARTIE PRÉMATURÉE (Plus de musique)
+        if (!$this->currentMusic) {
+            
+            $this->answerMessage = "Plus de musiques disponibles dans la catégorie '{$genreFiltre}'. Fin de partie prématurée.";
+            $this->roundStatus = 'finished';
+
+            // 🔥 Mise à jour finale du score et du statut dans la DB
+            $this->jeu->update(['status_enum' => 'terminé', 'score' => $this->score]);
+            
+            // 🔥 DISPATCH L'ÉVÉNEMENT POUR ENREGISTRER LE MEILLEUR SCORE
+            $this->dispatch('gameFinished', score: $this->score, categorie: $this->jeu->genre_filtre);
+            
+            return;
+        }
+
+        // 3. Ajouter l'ID de la nouvelle musique à l'historique
+        $this->playedMusicIds[] = $this->currentMusic->id;
+        
+        // Supprime le bloc if (!$this->currentMusic) en double à la fin
     }
 
-   public function endRound(bool $answeredImmediately)
-{
-    // 1. Mise à jour du statut et du score (inchangé)
-    $this->roundStatus = 'revealed';
-/*     $this->timeRemaining = self::REVEAL_TIME; 
- */    $this->jeu->update(['score' => $this->score]);
-    
-    
-    if ($this->currentMusic) {
+    public function endRound(bool $answeredImmediately)
+    {
+        // 1. Mise à jour du statut
+        $this->roundStatus = 'revealed';
+        // NE PAS toucher au timeRemaining, car il doit rester à 0 si l'on ne veut pas de pause.
         
-        $this->revealedMusics[] = [
-            'manche' => $this->mancheActuelle,
-            'titre' => $this->currentMusic->titre,
-            'artiste' => $this->currentMusic->artiste,
-            'image' => $this->currentMusic->image ? \Storage::url($this->currentMusic->image) : null,
-            'score_gagne' => $this->score - $this->jeu->score, // Score gagné pendant cette manche
-        ];
+        // Enregistrer le score cumulé dans la partie (cela est mis à jour à chaque manche)
+        $this->jeu->update(['score' => $this->score]);
+        
+        
+        if ($this->currentMusic) {
+            // Le score gagné est la différence entre le nouveau score et l'ancien score stocké dans la DB (avant update)
+            $scoreGagneCetteManche = $this->score - $this->jeu->score; 
+
+            // Logique de l'historique de la manche (si besoin)
+            $this->revealedMusics[] = [
+                'manche' => $this->mancheActuelle,
+                'titre' => $this->currentMusic->titre,
+                'artiste' => $this->currentMusic->artiste,
+                'image' => $this->currentMusic->image ? \Storage::url($this->currentMusic->image) : null,
+                'score_gagne' => $scoreGagneCetteManche, 
+            ];
+        }
+        
+        // Message final
+        if (!$answeredImmediately) {
+            $this->answerMessage = "Temps écoulé !";
+        }
     }
-    
-    
-    if (!$answeredImmediately) {
-         $this->answerMessage = "Temps écoulé !";
-    }
-}
 
 
     public function submitAnswer()
-{
-    // 1. Vérification de l'état (inchangée)
-    if ($this->roundStatus !== 'playing' || $this->hasFoundFullAnswer || is_null($this->currentMusic)) {
-        $this->answerMessage = "Vous ne pouvez pas répondre maintenant.";
-        return;
-    }
-    
-    $this->validate(['userAnswer' => 'required|string|max:255']);
-    
-    // 2. Préparation
-    $normalizedAnswer = $this->normalizeString($this->userAnswer);
-    $correctTitle = $this->normalizeString($this->currentMusic->titre);
-    $correctArtist = $this->normalizeString($this->currentMusic->artiste);
-    
-    $titleMatch = str_contains($normalizedAnswer, $correctTitle);
-    $artistMatch = str_contains($normalizedAnswer, $correctArtist);
-    
-    $scoreGained = 0;
-    $responseFound = false; // Indicateur pour savoir si quelque chose a été trouvé
-    
-    // 3. ÉVALUATION CUMULATIVE
-    
-    // A. Vérifier si le titre a été trouvé ET s'il ne l'était pas déjà
-    if ($titleMatch && !$this->hasFoundTitle) {
-        $scoreGained += 5; // J'augmente le score partiel pour le rendre plus visible
-        $this->hasFoundTitle = true;
-        $responseFound = true;
-    }
-
-    
-    // B. Vérifier si l'artiste a été trouvé ET s'il ne l'était pas déjà
-    if ($artistMatch && !$this->hasFoundArtist) {
-        $scoreGained += 5; // J'augmente le score partiel
-        $this->hasFoundArtist = true;
-        $responseFound = true;
-    }
-    
-    // 4. MISE À JOUR DU SCORE
-    if ($scoreGained > 0) {
-        $this->score += $scoreGained;
-        
-        // 5. VÉRIFICATION DE LA RÉPONSE COMPLÈTE
-        if ($this->hasFoundTitle && $this->hasFoundArtist) {
-            
-            $this->hasFoundFullAnswer = true;
-            $this->endRound(true); // Fin de manche immédiate
-            $this->startNextRound();
-            $this->answerMessage = "🥇 FÉLICITATIONS ! Réponse complète trouvée (Total: +{$scoreGained} pts) !";
-            
-        } else {
-            // Réponse partielle ou nouvel élément trouvé
-            $this->answerMessage = "Bonne réponse partielle (+{$scoreGained} pts) ! Continuez !";
+    {
+        // 1. Vérification de l'état (inchangée)
+        if ($this->roundStatus !== 'playing' || $this->hasFoundFullAnswer || is_null($this->currentMusic)) {
+            $this->answerMessage = "Vous ne pouvez pas répondre maintenant.";
+            return;
         }
-    } elseif ($responseFound) {
-        // Cas où l'utilisateur a trouvé quelque chose mais l'avait DÉJÀ trouvé
-        $this->answerMessage = "Ce titre/artiste était déjà enregistré. Réessayez !";
+        
+        // ... (Logique de vérification, normalisation, calcul du score, etc. reste inchangée) ...
+        
+        $this->validate(['userAnswer' => 'required|string|max:255']);
+        
+        $normalizedAnswer = $this->normalizeString($this->userAnswer);
+        $correctTitle = $this->normalizeString($this->currentMusic->titre);
+        $correctArtist = $this->normalizeString($this->currentMusic->artiste);
+        
+        $titleMatch = str_contains($normalizedAnswer, $correctTitle);
+        $artistMatch = str_contains($normalizedAnswer, $correctArtist);
+        
+        $scoreGained = 0;
+        $responseFound = false;
+        
+        // ÉVALUATION CUMULATIVE
+        if ($titleMatch && !$this->hasFoundTitle) {
+            $scoreGained += 5; 
+            $this->hasFoundTitle = true;
+            $responseFound = true;
+        }
+
+        if ($artistMatch && !$this->hasFoundArtist) {
+            $scoreGained += 5; 
+            $this->hasFoundArtist = true;
+            $responseFound = true;
+        }
+        
+        // 4. MISE À JOUR DU SCORE
+        if ($scoreGained > 0) {
+            $this->score += $scoreGained;
+            
+            // 5. VÉRIFICATION DE LA RÉPONSE COMPLÈTE
+            if ($this->hasFoundTitle && $this->hasFoundArtist) {
+                
+                $this->hasFoundFullAnswer = true;
+                $this->endRound(true); // Passe à 'revealed' et enregistre le score
+                $this->startNextRound(); // Commence la prochaine manche/termine le jeu
+                
+                $this->answerMessage = "🥇 FÉLICITATIONS ! Réponse complète trouvée (Total: +{$scoreGained} pts) !";
+                
+            } else {
+                // Réponse partielle ou nouvel élément trouvé
+                $this->answerMessage = "Bonne réponse partielle (+{$scoreGained} pts) ! Continuez !";
+            }
+        } elseif ($responseFound) {
+            // Cas où l'utilisateur a trouvé quelque chose mais l'avait DÉJÀ trouvé
+            $this->answerMessage = "Ce titre/artiste était déjà enregistré. Réessayez !";
+        }
+        
+        // 6. CAS AUCUNE CORRESPONDANCE
+        else {
+            $this->answerMessage = "Mauvaise réponse. Réessayez.";
+        }
+        
+        $this->userAnswer = '';
     }
     
-    // 6. CAS AUCUNE CORRESPONDANCE
-    else {
-        $this->answerMessage = "Mauvaise réponse. Réessayez.";
-    }
-    
-    $this->userAnswer = '';
-}
-    
+    // ... (normalizeString() et render() restent inchangés) ...
     private function normalizeString(string $string): string
     {
         $string = strtolower($string);

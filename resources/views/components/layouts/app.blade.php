@@ -19,12 +19,14 @@
             {{-- Lien Accueil (toujours visible) --}}
             <a href="/" class="text-gray-600 hover:text-gray-900">Accueil</a>
 
-            @auth 
+            
                
                
-                
+                @auth 
+                @admin
                 <a href="/admin/musiques/ajouter" class="text-gray-600 hover:text-gray-900">Admin</a>
-                
+                @endadmin
+                <a href="/profil" class="text-gray-600 hover:text-gray-900">Profil</a>
                 <form method="POST" action="{{ route('logout') }}" style="display: inline;">
                     @csrf
                     <button type="submit" class="text-gray-600 hover:text-gray-900">Se déconnecter</button>

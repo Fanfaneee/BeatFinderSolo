@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\Jeu;
+use App\Models\MeilleursScore;
 
 class User extends Authenticatable
 {
@@ -59,5 +60,10 @@ class User extends Authenticatable
         public function jeux(): HasMany
     {
         return $this->hasMany(Jeu::class); 
+    }
+
+    public function meilleursScores(): HasMany
+    {
+        return $this->hasMany(MeilleursScore::class);
     }
 }

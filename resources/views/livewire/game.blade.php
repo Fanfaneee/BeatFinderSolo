@@ -1,3 +1,4 @@
+
 <div x-data="{ 
         // Sauvegarde du volume dans localStorage (défaut: 50%)
         audioVolume: $persist(0.5).as('globalAudioVolume'), 
@@ -21,6 +22,7 @@
     x-effect="syncVolume();"
     
     class="p-6 max-w-7xl mx-auto min-h-screen" wire:poll.1s="tick"> 
+    @livewire('score-saver')
     
     <h1 class="text-3xl font-extrabold text-indigo-700 text-center mb-6">
         Blind Test Solo - Manche {{ $mancheActuelle }} / {{ $jeu->nombre_manches }}

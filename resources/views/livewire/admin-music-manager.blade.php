@@ -1,5 +1,5 @@
 <div class="container mx-auto p-6">
-    <h1 class="text-3xl font-bold mb-6 text-indigo-700">🎸 Gestion du Catalogue Musique</h1>
+    <h1 class="text-3xl font-bold mb-6 text-indigo-700">   Gestion du Catalogue Musique</h1>
 
     {{-- Message de Succès --}}
     @if (session()->has('message'))
@@ -132,7 +132,6 @@
             <tr>
                  <td class="px-6 py-4 whitespace-nowrap">
                     @php
-                        // Conversion du chemin de stockage en URL publique
                         $publicImageUrl = $musique->image ? Storage::url($musique->image) : asset('chemin/vers/image_par_defaut.png');
                     @endphp
                     

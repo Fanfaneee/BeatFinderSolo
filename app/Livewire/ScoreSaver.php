@@ -5,8 +5,7 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\MeilleursScore;
 use Illuminate\Support\Facades\Auth;
-use Livewire\Attributes\On; // 🔥 NÉCESSAIRE pour écouter l'événement 'gameFinished'
-
+use Livewire\Attributes\On; 
 class ScoreSaver extends Component
 {
     // Rendre la méthode render() triviale car ce composant n'a pas de vue visible
@@ -15,9 +14,7 @@ class ScoreSaver extends Component
         return view('livewire.score-saver');
     }
 
-    /**
-     * 🔥 NOUVELLE MÉTHODE : Écoute l'événement 'gameFinished' déclenché par Game.php.
-     */
+    
     #[On('gameFinished')]
     public function handleGameFinished(int $score, string $categorie)
     {
@@ -39,30 +36,50 @@ class ScoreSaver extends Component
         }
 
         $userId = Auth::id();
+        $GLOBAL_KEY = 'Global'; // Clé pour le meilleur score absolu
+        
+        $currentRecord = null; // Record de la catégorie spécifique (si ce n'est pas "Toutes Catégories")
 
-        // 1. Trouver l'enregistrement existant pour cet utilisateur/catégorie
-        $existingBestScore = MeilleursScore::where('user_id', $userId)
-                                          ->where('categorie', $categorie)
-                                          ->first();
-
-        // 2. Si un score existe ET que le nouveau score est PLUS GRAND
-        if ($existingBestScore) {
-            if ($score > $existingBestScore->score) {
-                $existingBestScore->score = $score;
-                $existingBestScore->date_score = now();
-                $existingBestScore->save();
-                return $existingBestScore;
+        // ---------------------------------------------------------------------
+        // 1. Sauvegarde/Mise à jour du score par CATÉGORIE SPÉCIFIQUE
+        // ---------------------------------------------------------------------
+        
+        // Si la partie jouée n'était PAS le mode "Toutes Catégories", on l'enregistre
+        if ($categorie !== 'Toutes Catégories') {
+            
+            $existingCatScore = MeilleursScore::where('user_id', $userId)
+                                            ->where('categorie', $categorie)
+                                            ->first();
+            
+            // On utilise updateOrCreate (ou la logique If/Else If) pour la mise à jour conditionnelle
+            if (!$existingCatScore || $score > $existingCatScore->score) {
+                $currentRecord = MeilleursScore::updateOrCreate(
+                    ['user_id' => $userId, 'categorie' => $categorie],
+                    ['score' => $score, 'date_score' => now()]
+                );
+            } else {
+                $currentRecord = $existingCatScore;
             }
-            // Si le nouveau score est inférieur ou égal, on ne fait rien
-            return $existingBestScore;
+        }
+
+        // ---------------------------------------------------------------------
+        // 2. Sauvegarde/Mise à jour du score GLOBAL (Meilleur Absolu)
+        //    (Ceci est mis à jour même si la partie jouée était une catégorie spécifique)
+        // ---------------------------------------------------------------------
+        
+        $existingGlobalScore = MeilleursScore::where('user_id', $userId)
+                                            ->where('categorie', $GLOBAL_KEY)
+                                            ->first();
+
+        // Si le score actuel est meilleur que le record Global (ou si le record n'existe pas)
+        if (!$existingGlobalScore || $score > $existingGlobalScore->score) {
+            MeilleursScore::updateOrCreate(
+                ['user_id' => $userId, 'categorie' => $GLOBAL_KEY],
+                ['score' => $score, 'date_score' => now()]
+            );
         }
         
-        // 3. Si aucun score n'existe, on le crée
-        return MeilleursScore::create([
-            'user_id' => $userId,
-            'score' => $score,
-            'categorie' => $categorie,
-            'date_score' => now(), 
-        ]);
+        // Retourne le record spécifique si trouvé, sinon null
+        return $currentRecord; 
     }
 }

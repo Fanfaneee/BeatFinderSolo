@@ -1,11 +1,95 @@
 @import 'tailwindcss';
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
-@source '../**/*.js';
 
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+.gradient-box {
+    background: linear-gradient(0deg, #c0c0c0, #ffffff);
+}
+
+.bg-wtt-noise-gradient {
+    /* 1. La couche du bruit (doit être la première image) */
+    background-image: url("/public/storage/images/noise-bg5.png");
+    background-color: #22aaec;
+    /* 2. La couche du dégradé (doit être la deuxième) */
+    /*         linear-gradient(90deg, #22aaec, #a32ff0);
+ */
+
+
+
+    /* Répéter uniquement la première image (le bruit) */
+    background-repeat: repeat, no-repeat;
+
+    /* Fixer le bruit pour qu'il soit subtil et couvre toute la zone */
+    background-size: auto, cover;
+    /* 'auto' pour la noise, 'cover' pour le dégradé */
+
+    /* Optionnel : Ajuster l'opacité et le mode de mélange pour un effet doux et subtil */
+    background-blend-mode: overlay;
+    /* Utiliser 'overlay', 'soft-light' ou 'multiply' pour l'effet de grain */
+    opacity: 0.95;
+    /* Le rendre légèrement moins opaque pour laisser passer le contenu */
+}
+
+
+
+
+.cherry-bomb-one-regular {
+    font-family: "Cherry Bomb One", system-ui;
+    font-weight: 400;
+    font-style: normal;
+}
+
+.font {
+    font-family: "Luckiest Guy", cursive;
+}
+
+
+.titan-one-regular {
+    font-family: "Titan One", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+}
+
+.bebas-neue-regular {
+    font-family: "Bebas Neue", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+}
+
+.luckiest-guy-regular {
+    font-family: "Luckiest Guy", cursive;
+    font-weight: 400;
+    font-style: normal;
+}
+
+
+.text-bleu {
+    color: #2E23B3;
+
+}
+
+.bg-bleu {
+    background-color: #2E23B3;
+}
+
+
+
+.bg-bouton-partie {
+    background-color: #FFFFFFDE;
+}
+
+.couleur-bouton {
+    border-color: #e1e1e1;
+}
+
+/* .border-text {
+    text-shadow: -2px -6px 0px #000000;
+}
+ */
+:root {
+    --color_border: #000000;
 }

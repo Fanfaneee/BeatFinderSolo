@@ -5,6 +5,7 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\Jeu;
 use Illuminate\Support\Facades\Auth;
+use App\Models\MeilleursScore;
 
 class Lobby extends Component
 {
@@ -13,10 +14,15 @@ class Lobby extends Component
     public int $nombreManches= 5;
     public ?int $gameId= null;
     public string $selectedGenre = '';
+    public $allPodiums = [];
+    public $currentUserId; 
+    public $user;
+
 
     //pour carousel
     public static $GENRES_CHOIX = ['Pop', 'Rock', 'Hip Hop', 'Années 80', 'Hits 2020', 'Jazz']; // Exemple
     public $currentSlideIndex = 0;
+
     //
 
     const GENRES_CHOIX = [
@@ -34,13 +40,51 @@ class Lobby extends Component
     
     public function mount() {
         if (Auth::check()) {
-        // 🔥 CORRECTION : Accédez à la propriété 'username', pas à la méthode 'username()'
         $this->gameName = "Partie de " . Auth::user()->username;
     } else {
         $this->gameName = "Partie Blind Test"; 
     
     }
+    $this->loadAllPodiums();
+
 }
+
+// Nouvelle méthode pour centraliser la récupération des scores
+    public function loadAllPodiums(){
+    $limit = 5;
+    $this->allPodiums = [];
+    
+    // 1. Ajouter la catégorie 'Global' au début de la liste de podiums à afficher
+    $podiumCategories = array_merge(['Global'], self::GENRES_CHOIX);
+
+    // Boucle sur chaque catégorie (incluant maintenant 'Global' et ignorant 'Toutes Catégories')
+    foreach ($podiumCategories as $genre) {
+        
+        // Si c'est 'Toutes Catégories' (qui ne doit pas être un podium en soi), on passe.
+        if ($genre === self::GENRES_CHOIX[0]) continue; 
+        
+        // La clé de la requête est le nom de la catégorie ('Rock Classique' ou 'Global')
+        $queryCategory = ($genre === 'Global') ? 'Global' : $genre;
+
+        // Récupérer le top 5 général pour la catégorie, avec l'utilisateur associé
+        $podiumScores = MeilleursScore::with('user')
+            ->where('categorie', $queryCategory)
+            ->orderByDesc('score')
+            ->take($limit)
+            ->get();
+        
+        // Ajouter à l'array principal
+        $this->allPodiums[$genre] = $podiumScores;
+    }
+}
+
+    // Méthode pour forcer la mise à jour des podiums après une sauvegarde (appelée par ScoreSaver)
+    public function refreshPodiums()
+    {
+        // Livewire appelle toutes les propriétés dans le render après ça
+        $this->loadAllPodiums();
+    }
+
 
     public function createGame() {
         // Validez uniquement les champs de base ici, car la sélection se fera via boutons
@@ -55,7 +99,6 @@ class Lobby extends Component
             'status_enum' => 'en_cours',
             'score' => 0,
             'nombre_manches' => $this->nombreManches,
-            // 🔥 Sauvegarde du genre sélectionné
             'genre_filtre' => $this->selectedGenre, 
         ]);
         
@@ -121,7 +164,11 @@ public function nextSlide()
     }
 
 
+
+
     public function render(){
         return view('livewire.lobby');
     }
 }
+
+

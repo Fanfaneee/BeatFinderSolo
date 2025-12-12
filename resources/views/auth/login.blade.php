@@ -1,5 +1,5 @@
 <x-layouts.app>
-<div class="flex items-center justify-center min-h-screen bg-gray-100 p-6">
+<div class="flex items-center justify-center my-12 px-4 sm:px-6 lg:px-8">
     
     <div class="w-full max-w-md bg-white p-8 rounded-xl shadow-2xl border border-gray-200">
         
@@ -58,7 +58,11 @@
                     Se connecter
                 </button>
             </div>
-            
+            <div class="text-sm text-center">
+                <a href="{{ route('register') }}" class="font-medium text-indigo-600 hover:text-indigo-500">
+                    Pas encore de compte ? Inscrivez-vous
+                </a>
+            </div>
            
         </form>
     </div>

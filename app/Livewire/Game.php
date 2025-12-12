@@ -6,7 +6,7 @@ use Livewire\Component;
 use App\Models\Jeu;
 use App\Models\Musique;
 use Illuminate\Support\Facades\Auth;
-use Livewire\Attributes\On; // Correction de la faute de frappe : Livewire\Attributes\On
+use Livewire\Attributes\On; 
 use App\Livewire\Lobby;
 
 class Game extends Component
@@ -26,9 +26,9 @@ class Game extends Component
     public array $revealedMusics = [];
     public array $playedMusicIds = [];
     
-    // CONSTANTES
+    
     private const READING_TIME = 15;
-    // La constante REVEAL_TIME est conservée mais ignorée dans tick() selon votre demande.
+   
 
     
     public function mount(int $gameId)
@@ -41,8 +41,7 @@ class Game extends Component
 
         $this->score = $this->jeu->score;
         
-        // Initialiser l'historique des musiques jouées (si besoin de persistance)
-        // Pour l'instant, on se base sur les musiques jouées durant cette session
+      
         
         if ($this->jeu->status_enum === 'en_cours') {
             $this->startNextRound();
@@ -54,12 +53,12 @@ class Game extends Component
 
     public function tick()
     {
-        // 1. Arrêter si la partie est terminée ou en attente
+       
         if ($this->roundStatus === 'finished' || $this->roundStatus === 'waiting') {
             return;
         }
         
-        // 2. Décrémenter le minuteur uniquement si nous sommes en phase de jeu
+       
         if ($this->roundStatus === 'playing') {
             
             if ($this->timeRemaining > 1) {
@@ -67,27 +66,21 @@ class Game extends Component
                 return; 
             }
             
-            // 3. Le temps est écoulé (timeRemaining <= 1)
-            
-            // La manche de jeu se termine sans réponse complète
-            $this->endRound(false); // Passe le statut à 'revealed'
-            $this->startNextRound(); // Commence immédiatement la prochaine manche ou termine le jeu
+           
+            $this->endRound(false);
+            $this->startNextRound(); 
         } 
-        // L'état 'revealed' est ignoré ici, car la transition est gérée immédiatement dans endRound -> startNextRound
     }
 
     public function startNextRound()
     {
-        // 🚨 1. VÉRIFICATION DE LA FIN DE PARTIE NORMALE (Nombre de manches atteint)
         if ($this->mancheActuelle >= $this->jeu->nombre_manches) { 
             
             $this->roundStatus = 'finished';
 /*             dd('Fin de partie atteinte! Score à envoyer:', $this->score, 'Catégorie:', $this->jeu->genre_filtre);
  */            
-            // 🔥 Mise à jour finale du score et du statut dans la DB
             $this->jeu->update(['status_enum' => 'terminé', 'score' => $this->score]);
             
-            // 🔥 DISPATCH L'ÉVÉNEMENT POUR ENREGISTRER LE MEILLEUR SCORE (ScoreSaver)
             $this->dispatch('gameFinished', score: $this->score, categorie: $this->jeu->genre_filtre);
             
             return;
@@ -105,26 +98,22 @@ class Game extends Component
         $genreFiltre = $this->jeu->genre_filtre;
         $query = Musique::whereNotIn('id', $this->playedMusicIds);
 
-        // 🔥 Accès sécurisé à la constante de l'autre classe Lobby (évite les erreurs de classe non trouvée)
         $allCategoriesOption = constant(Lobby::class . '::GENRES_CHOIX')[0] ?? 'Toutes Catégories';
 
         if ($genreFiltre && $genreFiltre !== $allCategoriesOption) {
-            // Le champ 'genre' dans musiques doit correspondre à la valeur de Lobby::GENRES_CHOIX
             $query->where('genre', $genreFiltre);
         }
         
         $this->currentMusic = $query->inRandomOrder()->first();
         
-        // 🚨 2. VÉRIFICATION DE LA FIN DE PARTIE PRÉMATURÉE (Plus de musique)
         if (!$this->currentMusic) {
             
             $this->answerMessage = "Plus de musiques disponibles dans la catégorie '{$genreFiltre}'. Fin de partie prématurée.";
             $this->roundStatus = 'finished';
 
-            // 🔥 Mise à jour finale du score et du statut dans la DB
+           
             $this->jeu->update(['status_enum' => 'terminé', 'score' => $this->score]);
             
-            // 🔥 DISPATCH L'ÉVÉNEMENT POUR ENREGISTRER LE MEILLEUR SCORE
             $this->dispatch('gameFinished', score: $this->score, categorie: $this->jeu->genre_filtre);
             
             return;
@@ -213,7 +202,7 @@ class Game extends Component
                 $this->endRound(true); // Passe à 'revealed' et enregistre le score
                 $this->startNextRound(); // Commence la prochaine manche/termine le jeu
                 
-                $this->answerMessage = "🥇 FÉLICITATIONS ! Réponse complète trouvée (Total: +{$scoreGained} pts) !";
+                $this->answerMessage = "FÉLICITATIONS ! Réponse complète trouvée (Total: +{$scoreGained} pts) !";
                 
             } else {
                 // Réponse partielle ou nouvel élément trouvé

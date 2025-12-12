@@ -1,112 +1,111 @@
-
 <div x-data="{ 
-        // Sauvegarde du volume dans localStorage (défaut: 50%)
-        audioVolume: $persist(0.5).as('globalAudioVolume'), 
-        isMuted: $persist(false).as('globalMuteState'), 
+    // Sauvegarde du volume dans localStorage (défaut: 50%)
+    audioVolume: $persist(0.5).as('globalAudioVolume'), 
+    isMuted: $persist(false).as('globalMuteState'), 
 
-        // Fonction pour appliquer le volume à tous les éléments audio de la page
-        syncVolume() {
-            document.querySelectorAll('audio').forEach(audio => {
-                audio.volume = this.audioVolume;
-                audio.muted = this.isMuted;
-            });
-        },
-        
-        toggleMute() {
-            this.isMuted = !this.isMuted;
-            this.syncVolume();
-        }
-    }" 
+    // Fonction pour appliquer le volume à tous les éléments audio de la page
+    syncVolume() {
+        document.querySelectorAll('audio').forEach(audio => {
+            audio.volume = this.audioVolume;
+            audio.muted = this.isMuted;
+        });
+    },
     
-    x-init="syncVolume();" 
-    x-effect="syncVolume();"
+    toggleMute() {
+        this.isMuted = !this.isMuted;
+        this.syncVolume();
+    }
+}" 
+x-init="syncVolume();" 
+x-effect="syncVolume();"
+class="min-h-screen bg-wtt-noise-gradient" wire:poll.1s="tick"> 
     
-    class="p-6 max-w-7xl mx-auto min-h-screen" wire:poll.1s="tick"> 
     @livewire('score-saver')
     
-    <h1 class="text-3xl font-extrabold text-indigo-700 text-center mb-6">
-        Blind Test Solo - Manche {{ $mancheActuelle }} / {{ $jeu->nombre_manches }}
-    </h1>
-
-    <div class="grid grid-cols-4 gap-6">
+    <div class="p-6 max-w-7xl mx-auto">
         
-        {{-- COLONNE 1, 2, 3 : JEU ACTUEL (LECTURE / RÉPONSE / RÉVÉLATION) --}}
-        <div class="col-span-3 bg-white p-6 rounded-xl shadow-2xl border border-gray-200">
+        {{-- 1. EN-TÊTE DE JEU & CONTRÔLES DE VOLUME (Le nom de la partie / manche et le volume - ne bouge pas) --}}
+        <div class="flex justify-between items-center  p-4 rounded-xl   mb-6">
             
-            {{-- 🔥 CONTROLEUR DE VOLUME --}}
-            <div class="flex justify-end mb-4 -mt-3">
-                <div class="flex items-center space-x-2 bg-gray-100 p-2 rounded-lg shadow-inner">
-                    
-                    {{-- Bouton Mute/Unmute --}}
-                    <button @click="toggleMute()" class="text-gray-600 hover:text-indigo-600 p-1">
-                        {{-- Icône Volume Up (Visible si pas muted) --}}
-                        <svg x-show="!isMuted && audioVolume > 0.01" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-volume-up-fill" viewBox="0 0 16 16">
-                            <path d="M11.536 14.01A8.47 8.47 0 0 0 14.026 8a8.47 8.47 0 0 0-2.49-6.01l-.708.707A7.48 7.48 0 0 1 13.025 8c0 2.071-.84 3.946-2.197 5.303z"/>
-                            <path d="M10.121 12.596A6.48 6.48 0 0 0 12.025 8a6.48 6.48 0 0 0-1.904-4.596l-.707.707A5.48 5.48 0 0 1 11.025 8a5.48 5.48 0 0 1-1.61 3.89z"/>
-                            <path d="M10.025 8a4.5 4.5 0 0 1-1.318 3.182L8 10.475A3.5 3.5 0 0 0 9.025 8c0-.966-.392-1.841-1.025-2.475l.707-.707A4.5 4.5 0 0 1 10.025 8M7 4a.5.5 0 0 0-.812-.39L3.825 5.5H1.5A.5.5 0 0 0 1 6v4a.5.5 0 0 0 .5.5h2.325l2.363 1.89A.5.5 0 0 0 7 12zM4.312 6.39 6 5.04v5.92L4.312 9.61A.5.5 0 0 0 4 9.5H2v-3h2a.5.5 0 0 0 .312-.11"/>
-                        </svg>
-                        {{-- Icône Volume Off (Visible si muted) --}}
-                        <svg x-show="isMuted || audioVolume <= 0.01" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-volume-mute-fill" viewBox="0 0 16 16">
-                            <path d="M11.95 6.096A6.47 6.47 0 0 0 14.026 8c0 1.62-.647 3.093-1.684 4.096L13.1 13.593A7.47 7.47 0 0 1 14.026 8c0-2.071-.84-3.946-2.197-5.303l-.707.707z"/>
-                            <path d="M10.121 12.596A6.48 6.48 0 0 0 12.025 8a6.48 6.48 0 0 0-1.904-4.596l-.707.707A5.48 5.48 0 0 1 11.025 8a5.48 5.48 0 0 1-1.61 3.89z"/>
-                            <path d="M10.025 8a4.5 4.5 0 0 1-1.318 3.182L8 10.475A3.5 3.5 0 0 0 9.025 8c0-.966-.392-1.841-1.025-2.475l.707-.707A4.5 4.5 0 0 1 10.025 8M7 4a.5.5 0 0 0-.812-.39L3.825 5.5H1.5A.5.5 0 0 0 1 6v4a.5.5 0 0 0 .5.5h2.325l2.363 1.89A.5.5 0 0 0 7 12zM4.312 6.39 6 5.04v5.92L4.312 9.61A.5.5 0 0 0 4 9.5H2v-3h2a.5.5 0 0 0 .312-.11"/>
-                        </svg>
-                    </button>
-                    
-                    {{-- Slider de Volume --}}
-                    <input 
-                        type="range" 
-                        min="0" 
-                        max="1" 
-                        step="0.1" 
-                        x-model.number="audioVolume" 
-                        @input="isMuted = (audioVolume === 0)"
-                        class="w-24 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer range-sm accent-indigo-600"
-                    >
-                    
-                </div>
-            </div>
-            
-            <div class="bg-indigo-50 p-4 rounded-lg text-center mb-6 border-b-4 border-indigo-500">
-                <p class="text-xl font-semibold text-gray-700">Score total : <span class="text-3xl font-bold text-indigo-700">{{ $score }}</span> pts</p>
-            </div>
-            
-            @if ($roundStatus === 'playing' || $roundStatus === 'revealed')
-                
-                <div class="text-center mb-6">
-                    <p class="text-6xl font-extrabold {{ $roundStatus === 'playing' ? 'text-red-600 animate-pulse' : 'text-green-600' }}">
-                        {{ $timeRemaining }}s
-                    </p>
-                    <p class="text-xl text-gray-600">
-                        @if ($roundStatus === 'playing')
-                            🎧 Écoutez et répondez !
-                        @else
-                            ➡️ Prochaine manche...
-                        @endif
-                    </p>
-                </div>
+            {{-- TITRE DE LA PARTIE / MANCHE --}}
+            <h1 class="text-3xl font-extrabold text-bleu font-cherry">
+                {{ $jeu->name }} - Manche {{ $mancheActuelle }} / {{ $jeu->nombre_manches }}
+            </h1>
 
-                {{-- LECTEUR AUDIO PENDANT LA LECTURE (wire:key pour le re-rendu unique) --}}
-                @if ($currentMusic)
-                {{-- Visuel Sonore Décoratif (simple) --}}
-                <div class="mt-4 h-12 bg-gray-100 rounded-lg overflow-hidden flex items-end p-1 space-x-1 border border-gray-300">
-                    @for ($i = 0; $i < 20; $i++)
-                        <div class="bg-indigo-400 rounded-sm" style="width: 8%; height: {{ rand(30, 100) }}%; animation: soundbar-{{ $i }} 1s infinite alternate; animation-delay: {{ $i * 0.1 }}s;"></div>
-                    @endfor
-                    <style>@keyframes soundbar-animation { 0% { height: 30%; } 100% { height: 100%; } }</style>
-                </div>
-                    <div class="flex hidden justify-center items-center mb-8" x-data="{ playing: false }">
-                        <audio 
-                            id="game-audio"
-                            wire:key="audio-{{ $currentMusic->id }}"
-                            src="{{ asset('storage/' . $currentMusic->extract) }}" 
-                            controls 
-                            class="w-full max-w-sm"
-                            loop
-                            x-init="$el.volume = audioVolume; $el.muted = isMuted; $el.play().catch(e => console.log('Autoplay bloqué, nécessite interaction utilisateur.'));"
-                        ></audio>
-                    </div>
-                @endif
+            {{-- CONTRÔLEUR DE VOLUME --}}
+            <div class="flex items-center space-x-2  p-2 rounded-lg ">
+                <button @click="toggleMute()" class="text-blue hover:text-indigo-600 p-1">
+                    <svg x-show="!isMuted && audioVolume > 0.01" width="20" height="20" viewBox="0 -1.5 31 31" fill="currentColor" class="bi bi-volume-up-fill" xmlns="http://www.w3.org/2000/svg"><path d="M277,571.015 L277,573.068 C282.872,574.199 287,578.988 287,585 C287,590.978 283,595.609 277,596.932 L277,598.986 C283.776,597.994 289,592.143 289,585 C289,577.857 283.776,572.006 277,571.015 L277,571.015 Z M272,573 L265,577.667 L265,592.333 L272,597 C273.104,597 274,596.104 274,595 L274,575 C274,573.896 273.104,573 272,573 L272,573 Z M283,585 C283,581.477 280.388,578.59 277,578.101 L277,580.101 C279.282,580.564 281,582.581 281,585 C281,587.419 279.282,589.436 277,589.899 L277,591.899 C280.388,591.41 283,588.523 283,585 L283,585 Z M258,581 L258,589 C258,590.104 258.896,591 260,591 L263,591 L263,579 L260,579 C258.896,579 258,579.896 258,581 L258,581 Z" id="volume-full" sketch:type="MSShapeGroup" transform="translate(-258.000000, -571.000000)"/> </svg>
+                    <svg x-show="isMuted || audioVolume <= 0.01" width="20" height="20" viewBox="0 -3 30 30" fill="currentColor" class="bi bi-volume-mute-fill" xmlns="http://www.w3.org/2000/svg"><path d="M336.444,585 L340.617,580.827 C341.067,580.377 341.109,579.688 340.711,579.289 C340.312,578.891 339.623,578.933 339.173,579.383 L335,583.556 L330.827,579.383 C330.377,578.933 329.688,578.891 329.289,579.289 C328.891,579.688 328.933,580.377 329.383,580.827 L333.556,585 L329.383,589.173 C328.933,589.623 328.891,590.312 329.289,590.711 C329.688,591.109 330.377,591.067 330.827,590.617 L335,586.444 L339.173,590.617 C339.623,591.067 340.312,591.109 340.711,590.711 C341.109,590.312 341.067,589.623 340.617,589.173 L336.444,585 L336.444,585 Z M325,573 L318,577.667 L318,592.333 L325,597 C326.104,597 327,596.104 327,595 L327,575 C327,573.896 326.104,573 325,573 L325,573 Z M311,581 L311,589 C311,590.104 311.896,591 313,591 L316,591 L316,579 L313,579 C311.896,579 311,579.896 311,581 L311,581 Z" id="volume-muted" sketch:type="MSShapeGroup" transform="translate(-311.000000, -573.000000)"/> </svg>
+                </button>
+                <input type="range" min="0" max="1" step="0.1" x-model.number="audioVolume" @input="isMuted = (audioVolume === 0)" class="w-24 h-1  bg-gray-300 rounded-lg appearance-none cursor-pointer range-sm accent-indigo-600">
+            </div>
+        </div>
+        
+        @if ($roundStatus === 'finished')
+             {{-- Affichage de fin de partie --}}
+            <div class="text-center p-12 rounded-xl  border-green-500 l">
+                <h2 class="text-5xl font-extrabold text-green-800 mb-4">PARTIE TERMINÉE !</h2>
+                <p class="text-3xl font-semibold">Score Final: {{ $score }} pts</p>
+                <p class="text-lg mt-4 text-white">Félicitations pour votre performance !</p>
+                <a href="{{ route('home') }}" class="mt-8 inline-block py-3 px-8 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition transform hover:scale-105">
+                    Retour à l'Accueil
+                </a>
+            </div>
+        
+        @elseif ($roundStatus === 'playing' || $roundStatus === 'revealed')
+
+            {{-- 2. ZONE DE RÉPONSE / BOUTON (Pleine largeur) --}}
+            <div class=" p-6 rounded-xl ">
+                
+               {{-- LECTEUR AUDIO --}}
+@if ($currentMusic)
+    <div class="mt-4 h-14 bg-gradient-to-r from-indigo-300 to-indigo-500/40 rounded-xl overflow-hidden flex items-end p-2 space-x-1 border border-indigo-200 shadow-sm mb-6 backdrop-blur-md">
+        
+        {{-- Visuel Sonore Moderne --}}
+        @for ($i = 0; $i < 30; $i++)
+            <div wire:ignore class="rounded-md bg-indigo-600/80 "
+                 style="
+                    width: 3%;
+                    height: {{ rand(40, 95) }}%;
+                    animation: soundbar-modern 1.2s ease-in-out infinite alternate;
+                    animation-delay: {{ $i * 0.07 }}s;
+                 ">
+            </div>
+        @endfor
+
+        <style>
+            @keyframes soundbar-modern {
+                0% { 
+                    transform: scaleY(0.4); 
+                    opacity: 0.7;
+                }
+                100% { 
+                    transform: scaleY(1); 
+                    opacity: 1;
+                }
+            }
+        </style>
+    </div>
+
+    {{-- Lecteur réel (caché) --}}
+    <div class="flex hidden justify-center items-center mb-8" x-data="{ playing: false }">
+        <audio 
+            id="game-audio"
+            wire:key="audio-{{ $currentMusic->id }}-{{ $mancheActuelle }}"
+            src="{{ asset('storage/' . $currentMusic->extract) }}" 
+            controls 
+            class="w-full max-w-sm"
+            x-init="
+                $el.volume = audioVolume; 
+                $el.muted = isMuted; 
+                $el.play().catch(e => console.log('Autoplay bloqué.'));
+                setTimeout(() => { $el.pause(); }, 15000);
+            "
+        ></audio>
+    </div>
+@endif
+
                 
                 {{-- Formulaire de Réponse (visible uniquement en phase 'playing') --}}
                 @if ($roundStatus === 'playing')
@@ -117,74 +116,108 @@
                             placeholder="Titre et Artiste..."
                             required
                             @if($hasFoundFullAnswer) disabled @endif
-                            class="w-full p-3 border-2 border-yellow-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500"
+                            class="w-full p-4 text-xl bg-white rounded-xl shadow-lg focus:ring-yellow-500 focus:border-yellow-500 transition duration-150"
                         >
                         <button 
                             type="submit"
                             @if($hasFoundFullAnswer) disabled @endif
-                            class="w-full py-3 bg-yellow-600 text-white font-bold rounded-lg hover:bg-yellow-700 disabled:opacity-50 transition"
+                            class="w-full hidden py-4  text-white text-2xl font-extrabold rounded-xl hover:bg-yellow-700 disabled:opacity-50 transition transform hover:scale-[1.01]"
                         >
                             Soumettre la Réponse
                         </button>
                     </form>
 
                     @if ($answerMessage)
-                        <p class="mt-4 text-center font-semibold {{ str_contains($answerMessage, 'Mauvaise') ? 'text-red-500' : 'text-green-600' }}">
+                        <p class="mt-4 text-center text-xl font-bold {{ str_contains($answerMessage, 'Mauvaise') ? 'text-red-500' : 'text-green-600' }}">
                             {{ $answerMessage }}
                         </p>
                     @endif
                 @endif
+
+                {{-- AFFICHAGE DE LA RÉPONSE RÉVÉLÉE --}}
+                @if ($roundStatus === 'revealed' && $currentMusic)
+                    <div class="text-center p-4  rounded-lg mt-4">
+                        <p class="text-lg font-semibold text-gray-700">La bonne réponse était :</p>
+                        <p class="text-2xl font-bold text-bleu">{{ $currentMusic->titre }} - {{ $currentMusic->artiste }}</p>
+                    </div>
+                @endif
+            </div>
+
+            {{-- 3. MINUTEUR (Pleine largeur) --}}
+            <div class="  rounded-xl  text-center mb-6 ">
+                <p class="text-6xl font-extrabold {{ $roundStatus === 'playing' ? 'text-red-600 ' : 'text-green-600' }}">
+                    {{ $timeRemaining }}s
+                </p>
+                <p class="text-xl text-gray-600">
+                    @if ($roundStatus === 'playing') Temps restant pour répondre ! @else Prochaine manche... @endif
+                </p>
+            </div>
+
+
+            {{-- 4. GRILLE DEUX COLONNES : JOURNAL (Gauche) & SCORE (Droite) --}}
+            <div class="grid grid-cols-2 gap-6">
                 
-                {{-- Nous avons supprimé le bloc révélé complet car le journal le remplace --}}
+                {{-- COLONNE GAUCHE : JOURNAL DES MANCHES --}}
+<div class="col-span-1 p-6 rounded-xl max-h-[70vh] overflow-y-auto">
+    
+    {{-- Conteneur du titre --}}
+    <div class="text-center">
+        <p class="text-3xl font-semibold text-gray-700 mb-2"> Journal des Manches</p>
+    </div>
+    
+    {{-- Contenu du Journal avec Alpine.js --}}
+    <div x-data="{ revealedMusics: @js($revealedMusics) }" wire:model="revealedMusics">
+        {{-- ✅ RETIRER 'text-center' d'ici --}}
+        <ul class="space-y-4"> 
+            <template x-for="item in revealedMusics.slice().reverse()" :key="item.manche">
+                
+                {{-- ITEM LI : Nous allons le centrer dans la colonne --}}
+                <li x-transition:enter="transition ease-out duration-300 transform" 
+                    x-transition:enter-start="opacity-0 translate-y-4" 
+                    x-transition:enter-end="opacity-100 translate-y-0" 
+                    
+                    {{-- ✅ AJOUTER mx-auto pour centrer la liste item --}}
+                    class="p-3 rounded-md flex space-x-3 items-start mx-auto w-11/12" 
+                    :class="item.score_gagne > 0 ? 'border-green-500 bg-green-50' : 'border-gray-400 bg-gray-100'"
+                >
+                    {{-- Le contenu de la liste item (image + texte) --}}
+                    <template x-if="item.image">
+                        <img :src="item.image" :alt="'Pochette ' + item.titre" class="h-10 w-10 object-cover rounded-md flex-shrink-0 mt-1">
+                    </template>
+    
+                    <div class="flex-grow"> 
+                        <p class="text-xs text-gray-500 font-bold" x-text="'MANCHE ' + item.manche"></p>
+                        <p class="font-medium text-gray-900 leading-tight" x-text="item.titre"></p>
+                        <p class="text-sm text-gray-600" x-text="'par ' + item.artiste"></p>
+                        
+                        <template x-if="item.score_gagne > 0">
+                            <p class="text-sm font-bold text-green-700" x-text="'+' + item.score_gagne + ' pts'"></p>
+                        </template>
+                    </div>
+                </li>
+            </template>
 
-            @elseif ($roundStatus === 'finished')
+            <template x-if="revealedMusics.length === 0">
+                <p class="text-sm text-gray-500 text-center">Aucune manche terminée.</p>
+            </template>
+        </ul>
+    </div>
+</div>
 
-                <div class="text-center p-6 bg-green-100 rounded-lg border-4 border-green-500">
-                    <h2 class="text-4xl font-extrabold text-green-800 mb-3">🎉 PARTIE TERMINÉE !</h2>
-                    <p class="text-2xl font-semibold">Score Final: {{ $score }} pts</p>
-                    <p class="text-lg mt-4 text-gray-600">Félicitations pour votre performance !</p>
-                    <a href="{{ route('home') }}" class="mt-6 inline-block py-2 px-6 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition">
-                        Retour à l'Accueil
-                    </a>
+                {{-- COLONNE DROITE : SCORE ACTUEL --}}
+                <div class="col-span-1 p-6 rounded-xl   flex items-center justify-center">
+                    <div class="text-center">
+                        <p class="text-3xl font-semibold text-gray-700 mb-2">Votre Score Actuel :</p>
+                        <p class="text-7xl font-extrabold text-bleu">{{ $score }}</p>
+                        <p class="text-2xl text-gray-500 mt-1">points</p>
+                    </div>
                 </div>
 
-            @else
-                <p class="text-center text-gray-500">Chargement de la partie...</p>
-            @endif
-
-        </div>
-
-        {{-- COLONNE 4 : HISTORIQUE DES CHANSONS RÉVÉLÉES --}}
-        <div class="col-span-1 bg-gray-50 p-4 rounded-xl shadow-inner border border-gray-300 max-h-[70vh] overflow-y-auto">
-            <h2 class="text-xl font-semibold mb-4 text-gray-700 sticky top-0 bg-gray-50 pb-2 border-b">
-                Journal des Manches
-            </h2>
-            
-            <ul class="space-y-4">
-                @forelse (array_reverse($revealedMusics) as $item)
-                    <li class="p-3 border-l-4 {{ $item['score_gagne'] > 0 ? 'border-green-500 bg-green-50' : 'border-gray-400 bg-gray-100' }} rounded-md shadow-sm flex space-x-3 items-start">
-                        
-                        @if ($item['image'])
-                            <img src="{{ $item['image'] }}" 
-                                alt="Pochette {{ $item['titre'] }}" 
-                                class="h-10 w-10 object-cover rounded-md flex-shrink-0 mt-1">
-                        @endif
-                        
-                        <div>
-                            <p class="text-xs text-gray-500 font-bold">MANCHE {{ $item['manche'] }}</p>
-                            <p class="font-medium text-gray-900 leading-tight">{{ $item['titre'] }}</p>
-                            <p class="text-sm text-gray-600">par {{ $item['artiste'] }}</p>
-                            
-                            @if ($item['score_gagne'] > 0)
-                                <p class="text-sm font-bold text-green-700">+{{ $item['score_gagne'] }} pts</p>
-                            @endif
-                        </div>
-                    </li>
-                @empty
-                    <p class="text-sm text-gray-500">Aucune manche terminée.</p>
-                @endforelse
-            </ul>
-        </div>
+            </div>
+        
+        @else
+            <p class="text-center text-gray-500">Chargement de la partie...</p>
+        @endif
         
     </div>
 </div>
